@@ -1,25 +1,22 @@
-// Map.js
 import React, { useEffect, useRef } from 'react';
-import 'leaflet/dist/leaflet.css'; // Import Leaflet CSS
 import L from 'leaflet';
 
-function Map({ selectedCategory }) {
+function MapWithMarkers({ selectedCategory }) {
     const mapContainerRef = useRef(null);
 
     useEffect(() => {
-        // Initialize the map only once when the component mounts
-        const map = L.map(mapContainerRef.current).setView([51.505, -0.09], 13);
+        const map = L.map(mapContainerRef.current).setView([0, 0], 1); // Set initial view
 
-        // Add a base tile layer (you can replace this with your own map source)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+        // Create a custom overlay using your JPG map image
+        const customOverlay = L.imageOverlay('./assets/UOP-Ofcl_Map_v4.jpg', [
+            [0, 0], // Replace with the top-left coordinates of your image
+            [1389, 1286], // Replace with the height and width of your image
+        ]).addTo(map);
 
-        // Sample marker data (replace with your data)
+        // Sample marker data with coordinates (x, y) on the JPG map image
         const markers = [
-            { name: 'Study Room 1', category: 'Study Rooms', lat: 51.505, lng: -0.09 },
-            { name: 'Study Room 2', category: 'Study Rooms', lat: 51.51, lng: -0.1 },
+            { name: 'Study Room 1', x: 378, y: 144, category: 'Study Rooms' },
+            { name: 'Study Room 2', x: 150, y: 250, category: 'Study Rooms' },
             // Add more markers as needed
         ];
 
@@ -28,19 +25,23 @@ function Map({ selectedCategory }) {
             ? markers.filter((marker) => marker.category === selectedCategory)
             : markers;
 
-        // Create markers and add them to the map
+        // Create markers and add them to the custom overlay
         filteredMarkers.forEach((marker) => {
-            const leafletMarker = L.marker([marker.lat, marker.lng]).addTo(map);
-            leafletMarker.bindPopup(marker.name); // Display marker name on click
+            const markerIcon = L.divIcon({ className: 'custom-marker', html: marker.name });
+            const markerPoint = map.latLngToContainerPoint([marker.y, marker.x]);
+
+            L.marker(map.containerPointToLatLng(markerPoint), { icon: markerIcon }).addTo(map);
         });
 
-        // Cleanup function to destroy the map when the component unmounts
+        // Set the map view to fit the custom overlay
+        map.fitBounds(customOverlay.getBounds());
+
         return () => {
             map.remove();
         };
-    }, [selectedCategory]); // Include 'selectedCategory' in the dependency array
+    }, [selectedCategory]);
 
-    return <div ref={mapContainerRef} id="map" style={{ height: '500px' }}></div>;
+    return <div ref={mapContainerRef} id="map" style={{ height: '500px' }} />;
 }
 
-export default Map;
+export default MapWithMarkers;
